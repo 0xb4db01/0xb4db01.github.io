@@ -84,11 +84,11 @@ env GOOS=windows GOARCH=amd64 go build -o helloworld -ldflags "-w -s" helloworld
 
 This makes it a stripped binary, and if we open it with Radare2 we can see unpleasant function names
 
-![image-20211114044626263](../_images/image-20211114044626263.png)
+![image-20211114044626263](/assets/images/image-20211114044626263.png)
 
 But let's open the binary with xxd, pipe in less and search for faff ffff 0000 to see what's there
 
-![image-20211114045058356](../_images/image-20211114045058356.png)
+![image-20211114045058356](/assets/images/image-20211114045058356.png)
 
 These are function names, very nice. Now we want to jump at pclnOffset, which should be the last value in our pcHeader struct that starts with _faff ffff 0000_. Such value is a _uintptr_ which in our case can just be treated as a regular unsigned int.
 
@@ -102,7 +102,7 @@ So, since pclnOffset is the last unsigned integer in our struct, it's value in t
 
 Now we can search for _1027e0_ in xxd, omitting _0x_ obviously
 
-![image-20211114050044899](../_images/image-20211114050044899.png)
+![image-20211114050044899](/assets/images/image-20211114050044899.png)
 
 Here we need to take in consideration the first integer, which is represented by _0010 4000 0000 0000_ and the following integer _0858 0000 0000 0000_. The first is the virtual address of the function, the second is an index that must be added to the offset where we just landed in order to reach the last struct we need to analyse.
 
@@ -116,13 +116,13 @@ So, in our first case, we have our index that is _0x5808_ and we add it to _0x10
 
 Notice that this number ends with 8, meaning we will not find it in our xxd output because all addresses are blocks of 16 and end in 0. We can still look for _107fe0_ and count up to 8 at that point
 
-![image-20211114135447259](../_images/image-20211114135447259.png)
+![image-20211114135447259](/assets/images/image-20211114135447259.png)
 
 I have highlited the interesting part to make things more clear, see the first integer? It's the same virtual address we saw earlier. The next is the index from where to start reading the function's name on that huge list of null-terminated strings we saw at the beginning. In this case it's 0, so it will be the first function.
 
 Just to be sure, let's go back and do the same for the second function
 
-![image-20211114051653863](../_images/image-20211114051653863.png)
+![image-20211114051653863](/assets/images/image-20211114051653863.png)
 
 we do the math
 
@@ -134,11 +134,11 @@ we do the math
 
 and we check what's up with the third structure. Again, the address ends with 8, we search for _108010_ and shift 8 bytes to the right
 
-![image-20211114135337480](../_images/image-20211114135337480.png)
+![image-20211114135337480](/assets/images/image-20211114135337480.png)
 
 0xb is 11, so let's go back to pcHeader and count 11 where the strings of function names start
 
-![image-20211114052142363](../_images/image-20211114052142363.png)
+![image-20211114052142363](/assets/images/image-20211114052142363.png)
 
 The tenth character is 00 which means we are correct. By starting from the eleventh character we are taking the second function's name.
 
@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
 If we run this script we can notice functions and corresponding addresses being printed
 
-![image-20211114130123327](../_images/image-20211114130123327.png)
+![image-20211114130123327](/assets/images/image-20211114130123327.png)
 
 To check this, we could open Radare2, rename _0x48c560_ in _main_main_  and since we expect the main function to call some print function and exit, we can take all the functions that do some printing and rename them
 
@@ -225,11 +225,11 @@ python3 goxtract.py|grep rintln
 
 In r2 we type the following commands
 
-![image-20211114130829497](../_images/image-20211114130829497.png)
+![image-20211114130829497](/assets/images/image-20211114130829497.png)
 
 Finally we browse the main_main function and see how it looks
 
-![image-20211114130947412](../_images/image-20211114130947412.png)
+![image-20211114130947412](/assets/images/image-20211114130947412.png)
 
 Seems perfect to me. We have Go's function prologue that checks for the stack and in case calls the runtime_morestack function (which here is still r2 generic named) and then goes through some code that eventually calls fmt_Fprintln.
 
