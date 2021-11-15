@@ -5,8 +5,6 @@ date: Mon Nov 15 19:24:41 CET 2021
 categories: RE
 ---
 
-# Extracting function names from Go >= 1.16 stripped binaries
-
 ## Abstract
 
 Some time ago I was given an artifact extracted from a compromise and it turned out to be a legit reverse proxy written in Go and compiled stripped.
